@@ -252,3 +252,115 @@ is_multisets_approx_equal <- function(mset1, mset2, tol = .Machine$double.eps^0.
 
   return(length(mset2) == 0);
 }
+
+compute.frapproximations <- function(x, Ls, rank, numiter,
+                                     kind = c("1d-ssa", "toeplitz-ssa"),
+                                     svd.method = c("eigen", "propack", "nutrlan", "svd"),
+                                     neig = rank + 1) {
+  kind <- match.arg(kind);
+  svd.method <- match.arg(svd.method);
+
+  out <- lapply(Ls, function(L) {
+        ss <- if (identical(svd.method, "eigen") || identical(svd.method, "svd")) {
+              ssa(x, L, kind = kind, svd.method = svd.method)
+            } else {
+              suppressWarnings(ssa(x, L, kind = kind, svd.method = svd.method, neig = neig));
+            }
+        cadzow(ss, rank, numiter = numiter);
+      });
+
+  names(out) <- paste("L", Ls, sep = "");
+
+  attributes(out)[c("kind")] <- list(kind);
+  out;
+}
+
+make.cadzow.test.data <- function(series,
+                                  name = deparse(substitute(series)),
+                                  Ls,
+                                  rank,
+                                  numiter = 0,
+                                  kind = c("1d-ssa", "toeplitz-ssa"),
+                                  svd.method = c("eigen", "propack", "svd", "nutrlan"),
+                                  tolerance = 1e-7,
+                                  neig = NULL,
+                                  svd.methods = c("eigen", "propack", "svd", "nutrlan")) {
+
+  kind <- match.arg(kind);
+  svd.method <- match.arg(svd.method);
+
+  if (!is.list(svd.methods)) {
+    svd.methods <- rep(list(svd.methods), length(Ls))
+  }
+
+  svd.methods <- lapply(svd.methods, function(svd.methods.v) sapply(svd.methods.v, match.arg, choices = c("eigen", "propack", "svd", "nutrlan")))
+
+  out <- list(series = series);
+
+  out$frapprox <- compute.frapproximations(series, Ls, rank = rank,
+                                           kind, neig = neig, numiter = numiter,
+                                           svd.method = svd.method);
+  
+  attr(out, "name") <- name;
+  attr(out, "pars") <- list(kind = kind,
+                            Ls = Ls,
+                            rank = rank,
+                            neig = neig,
+                            numiter = numiter
+                            );
+  attr(out, "tolerance") <- tolerance;
+  attr(out, "svd.methods") <- svd.methods;
+
+  out;
+}
+
+test.cadzow.test.data <- function(test.data,
+                                  name = attr(test.data, "name"),
+                                  Ls,
+                                  svd.methods,
+                                  tolerance,
+                                  neig,
+                                  ...) {
+  if (missing(tolerance))
+    tolerance <- attr(test.data, "tolerance");
+
+  pars <- attr(test.data, "pars");
+
+  kind <- pars$kind;
+
+  if (missing(neig))
+    neig <- pars$neig;
+
+  if (missing(Ls)) {
+    Ls <- pars$Ls
+  }
+
+  if (missing(svd.methods)) {
+    svd.methods <- attr(test.data, "svd.methods");
+  }
+
+  if (!is.list(svd.methods)) {
+    svd.methods <- rep(list(svd.methods), length(Ls))
+  }
+
+  svd.methods <- lapply(svd.methods, function(svd.methods.v) sapply(svd.methods.v, match.arg, choices = c("eigen", "propack", "svd", "nutrlan")))
+
+  series <- test.data$series;
+  rank <- pars$rank;
+  numiter <- pars$numiter;
+
+  for (iL in seq_along(Ls)) {
+    L <- Ls[[iL]]
+    Lname <- paste("L", L, sep = "")
+    for (svd.method in svd.methods[[iL]]) {
+      frapprox <- compute.frapproximations(series, L, rank = rank, numiter = numiter,
+                                           kind, neig = neig,
+                                           svd.method = svd.method)
+      expect_equal(frapprox[[Lname]], test.data$frapprox[[Lname]],
+                   label = sprintf("%s, %s: %s$frapprox, L = %d, rank = %d, numiter = %d", name, kind, svd.method, L, rank, numiter),
+                   tolerance = tolerance, ...)
+    }
+    
+  }
+
+}
