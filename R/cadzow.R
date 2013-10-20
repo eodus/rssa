@@ -29,13 +29,8 @@ mcadzow <- function(x, rank,
   it <- 0
   repeat {
     s <- clone(x, copy.cache = FALSE, copy.storage = FALSE)
-    .set(s, "Fattr", attributes(F))
-    .set(s, "Fclass", class(F))
-    .set(s, "weights", .get(x, "weights"))
-    .set(s, "fmask", .get(x, "fmask"))
     FL <- .to.series.list(r[[1]], na.rm = TRUE)
     .set(s, "F", FL)
-    .set(s, "Iattr", lapply(FL, attributes))
     r <- reconstruct(s, groups = list(1:rank), ..., cache = cache)
     stopifnot(length(r) == 1)
     rF <- r[[1]]
@@ -88,10 +83,8 @@ cadzow.1d.ssa <- function(x, rank,
 
   # Correct the stuff if requested
   if (correct) {
-    h1 <- hankel(F, x$window)
-    h2 <- hankel(.get(x, "F"), x$window)
-
-    F <- sum(h1 * h2) / sum(h2 * h2) * F
+    xF <- .get(x, "F")
+    F <- sum(F * xF * .hweights(x)) / sum(xF * xF * .hweights(x)) * F
   }
 
   F
