@@ -17,47 +17,19 @@
 #   Free Software Foundation, Inc., 675 Mass Ave, Cambridge,
 #   MA 02139, USA.
 
-mcadzow <- function(x, rank,
-                    eps = 1e-6, numiter = 0,
-                    ..., cache = TRUE) {
-  # Obtain the initial reconstruction of rank r
-  r <- reconstruct(x, groups = list(1:rank), ..., cache = cache)
-  stopifnot(length(r) == 1)
-  F <- r[[1]]
-  # Do the actual iterations until the convergence (or stoppping due to number
-  # of iterations)
-  it <- 0
-  repeat {
-    s <- clone(x, copy.cache = FALSE, copy.storage = FALSE)
-    FL <- .to.series.list(F, na.rm = TRUE)
-    .set(s, "F", FL)
-    r <- reconstruct(s, groups = list(1:rank), ..., cache = cache)
-    stopifnot(length(r) == 1)
-    rF <- r[[1]]
-
-    it <- it + 1
-    if ((numiter > 0 && it >= numiter) || max((F-rF)^2) < eps)
-      break
-    F <- rF
-  }
-
-  F
-}
-
 cadzow.ssa <- function(x, rank,
                        eps = 1e-6, numiter = 0,
-                       ..., cache = TRUE) {
+                       ..., cache = TRUE, convert = identity) {
   # Obtain the initial reconstruction of rank r
   r <- reconstruct(x, groups = list(1:rank), ..., cache = cache)
   stopifnot(length(r) == 1)
   F <- r[[1]]
-
   # Do the actual iterations until the convergence (or stoppping due to number
   # of iterations)
   it <- 0
   repeat {
     s <- clone(x, copy.cache = FALSE, copy.storage = FALSE)
-    .set(s, "F", F)
+    .set(s, "F", convert(F))
     r <- reconstruct(s, groups = list(1:rank), ..., cache = cache)
     stopifnot(length(r) == 1)
     rF <- r[[1]]
@@ -96,7 +68,8 @@ cadzow.mssa <- function(x, rank,
                         ..., cache = TRUE) {
   # Get the result w/o any correction
   fcall <- match.call(expand.dots = FALSE)
-  fcall[[1]] <- mcadzow
+  fcall[[1]] <- cadzow.ssa
+  fcall$convert <- .to.series.list
   fcall$correct <- NULL
   F <- eval(fcall, parent.frame())
 
