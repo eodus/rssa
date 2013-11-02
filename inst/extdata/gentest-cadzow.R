@@ -27,7 +27,7 @@ fr50 <- finite.rank.r5ex1(50);
 fr20.td <- make.cadzow.test.data(series = fr20,
                                  Ls = c(8, 10, 15),
                                  rank = 4,
-                                 numiter = 100,
+                                 numiter = 50,
                                  kind = "1d-ssa",
                                  svd.method = "e",
                                  svd.methods = list(svd.wo.nutrlan, svd.wo.nutrlan, svd.wo.nutrlan),
@@ -37,7 +37,7 @@ test.cadzow.test.data(test.data = fr20.td);
 fr50.td <- make.cadzow.test.data(series = fr50,
                                  Ls = c(17, 25, 40),
                                  rank = 4,
-                                 numiter = 100,
+                                 numiter = 50,
                                  kind = "1d-ssa",
                                  svd.method = "e",
                                  svd.methods = list(svd.wo.nutrlan, svd.wo.nutrlan, svd.wo.nutrlan),
@@ -49,7 +49,7 @@ set.seed(1);
 fr20.nz.td <- make.cadzow.test.data(series = fr20 + rnorm(fr20),
                                     Ls = c(8, 10, 15),
                                     rank = 4,
-                                    numiter = 100,
+                                    numiter = 50,
                                     kind = "1d-ssa",
                                     svd.method = "e",
                                     svd.methods = list(svd.wo.nutrlan, svd.wo.nutrlan, svd.wo.nutrlan),
@@ -61,18 +61,43 @@ set.seed(1);
 fr50.nz.td <- make.cadzow.test.data(series = fr50 + rnorm(fr50),
                                     Ls = c(17, 25, 40),
                                     rank = 4,
-                                    numiter = 100,
+                                    numiter = 50,
                                     kind = "1d-ssa",
                                     svd.method = "e",
                                     svd.methods = list(svd.wo.nutrlan, svd.wo.nutrlan, svd.wo.nutrlan),
                                     neig = 15);
 test.cadzow.test.data(test.data = fr50.nz.td);
 
+set.seed(1);
 
-save(co2.td, fr20.td, fr50.td, fr20.nz.td, fr50.nz.td,
+fr_line <- function(x) {finite.rank.r5ex1(x) + rnorm(x)}
+
+lofr20.nz.td <- make.cadzow.test.data(series = sapply(rep(20, 3), fr_line),
+                                      Ls = c(8, 10, 15),
+                                      rank = 4,
+                                      numiter = 50,
+                                      kind = "mssa",
+                                      svd.method = "e",
+                                      svd.methods = list(svd.wo.nutrlan, svd.wo.nutrlan, svd.wo.nutrlan),
+                                      neig = 15);
+test.cadzow.test.data(test.data = lofr20.nz.td);
+
+set.seed(1);
+
+lofr50.nz.td <- make.cadzow.test.data(series = sapply(rep(50, 3), fr_line),
+                                      Ls = c(17, 25, 40),
+                                      rank = 4,
+                                      numiter = 50,
+                                      kind = "mssa",
+                                      svd.method = "e",
+                                      svd.methods = list(svd.wo.nutrlan, svd.wo.nutrlan, svd.wo.nutrlan),
+                                      neig = 15);
+test.cadzow.test.data(test.data = lofr50.nz.td);
+
+save(co2.td, fr20.td, fr50.td, fr20.nz.td, fr50.nz.td, lofr20.nz.td, lofr50.nz.td,
      file = system.file("extdata", "cadzow.testdata.rda", package = "Rssa"),
      compress = "xz", compression_level = 9);
 
 #TODO eps check
 #TODO correction check
-#TODO mssa Cadzow check
+#TODO more mssa tests

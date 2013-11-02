@@ -254,7 +254,7 @@ is_multisets_approx_equal <- function(mset1, mset2, tol = .Machine$double.eps^0.
 }
 
 compute.frapproximations <- function(x, Ls, rank, numiter,
-                                     kind = c("1d-ssa", "toeplitz-ssa"),
+                                     kind = c("1d-ssa", "toeplitz-ssa", "mssa"),
                                      svd.method = c("eigen", "propack", "nutrlan", "svd"),
                                      neig = rank + 1) {
   kind <- match.arg(kind);
@@ -280,7 +280,7 @@ make.cadzow.test.data <- function(series,
                                   Ls,
                                   rank,
                                   numiter = 0,
-                                  kind = c("1d-ssa", "toeplitz-ssa"),
+                                  kind = c("1d-ssa", "toeplitz-ssa", "mssa"),
                                   svd.method = c("eigen", "propack", "svd", "nutrlan"),
                                   tolerance = 1e-7,
                                   neig = NULL,
