@@ -19,7 +19,7 @@
 
 cadzow.ssa <- function(x, rank,
                        eps = 1e-6, numiter = 0,
-                       ..., cache = TRUE, convert = identity) {
+                       ..., cache = TRUE) {
   # Obtain the initial reconstruction of rank r
   r <- reconstruct(x, groups = list(1:rank), ..., cache = cache)
   stopifnot(length(r) == 1)
@@ -29,7 +29,7 @@ cadzow.ssa <- function(x, rank,
   it <- 0
   repeat {
     s <- clone(x, copy.cache = FALSE, copy.storage = FALSE)
-    .set(s, "F", convert(F))
+    .set(s, "F", .to.series.list(F, na.rm = TRUE))
     r <- reconstruct(s, groups = list(1:rank), ..., cache = cache)
     stopifnot(length(r) == 1)
     rF <- r[[1]]
@@ -47,19 +47,20 @@ cadzow.1d.ssa <- function(x, rank,
                           correct = TRUE,
                           eps = 1e-6, numiter = 0,
                           ..., cache = TRUE) {
-  # Get the result w/o any correction
+  # Get mssa equivalent for x object
+  px <- clone(x, copy.cache = FALSE, copy.storage = FALSE)
+  pF <- .to.series.list(.get(x, "F"), na.rm = TRUE)
+  .set(px, "F", pF)
+  oldclass <-class(x)
+  class(px) <- c(paste("mssa", strsplit(oldclass[[1]], ".", 
+    fixed = TRUE)[[1]][3], sep = "."), "mssa", "ssa");
+
+  # Perform mssa Cadzow
   fcall <- match.call(expand.dots = FALSE)
-  fcall[[1]] <- cadzow.ssa
-  fcall$correct <- NULL
-  F <- eval(fcall, parent.frame())
+  fcall[[1]] <- cadzow.mssa
+  fcall$x <- px
+  eval(fcall, parent.frame())
 
-  # Correct the stuff if requested
-  if (correct) {
-    xF <- .get(x, "F")
-    F <- sum(F * xF * .hweights(x)) / sum(xF * xF * .hweights(x)) * F
-  }
-
-  F
 }
 
 cadzow.mssa <- function(x, rank,
@@ -69,7 +70,6 @@ cadzow.mssa <- function(x, rank,
   # Get the result w/o any correction
   fcall <- match.call(expand.dots = FALSE)
   fcall[[1]] <- cadzow.ssa
-  fcall$convert <- .to.series.list
   fcall$correct <- NULL
   F <- eval(fcall, parent.frame())
 
